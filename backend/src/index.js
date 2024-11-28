@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const annoncesRoutes = require('./routes/annonces');
+require('dotenv').config();
 
 const app = express();
 
@@ -9,30 +9,32 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connexion MongoDB
-mongoose.connect('mongodb://localhost:27017/immobilier-prestige', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log('Connecté à MongoDB'))
-.catch(err => console.error('Erreur de connexion MongoDB:', err));
+// Import des routes
+const authRoutes = require('./routes/auth');
+const annonceRoutes = require('./routes/annonces');
+const favorisRoutes = require('./routes/favoris');
+const searchesRoutes = require('./routes/searches');
+const openDataRoutes = require('./routes/opendata');
 
-// Utilisation des routes
-app.use('/api/annonces', annoncesRoutes);
+// Application des routes
+app.use('/api/auth', authRoutes);
+app.use('/api/annonces', annonceRoutes);
+app.use('/api/favoris', favorisRoutes);
+app.use('/api/searches', searchesRoutes);
+app.use('/api/opendata', openDataRoutes);
 
-// Route de test
-app.get('/', (req, res) => {
-    res.json({ message: 'API Immobilier de prestige' });
-});
+// Connexion à MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connecté à MongoDB'))
+  .catch(err => console.error('Erreur de connexion à MongoDB:', err));
 
-// Gestion des erreurs
+// Gestion des erreurs globales
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Erreur serveur' });
+  console.error(err.stack);
+  res.status(500).json({ message: 'Erreur serveur', error: err.message });
 });
 
-// Démarrage du serveur
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`Serveur démarré sur le port ${PORT}`);
 });
