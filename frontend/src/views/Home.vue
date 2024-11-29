@@ -81,90 +81,94 @@
 
       <!-- Annonces Grid -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <!-- ... reste du code des cartes ... -->
+        <AnnonceCard 
+          v-for="annonce in annonces" 
+          :key="annonce._id" 
+          :annonce="annonce"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { annonceService } from '../services/api'
-import PropertyImage from '../components/PropertyImage.vue'
-
+import { ref, computed, onMounted } from 'vue';
+import annonceService from '../services/annonceService';
+import AnnonceCard from '../components/AnnonceCard.vue';
 
 export default {
   name: 'Home',
-    components: {
-    PropertyImage
-},
+  
+  components: {
+    AnnonceCard // Remplacé PropertyImage par AnnonceCard
+  },
+
   setup() {
-    const annonces = ref([])
-    const loading = ref(true)
-    const error = ref(null)
+    const annonces = ref([]);
+    const loading = ref(true);
+    const error = ref(null);
     const searchFilters = ref({
       ville: '',
       type: '',
       prixMax: null
-    })
+    });
 
     const isFiltered = computed(() => {
       return searchFilters.value.ville !== '' || 
              searchFilters.value.type !== '' || 
-             searchFilters.value.prixMax !== null
-    })
+             searchFilters.value.prixMax !== null;
+    });
 
     const loadAnnonces = async () => {
       try {
-        loading.value = true
-        error.value = null
-        const data = await annonceService.getAllAnnonces()
-        annonces.value = data
+        loading.value = true;
+        error.value = null;
+        const data = await annonceService.getAllAnnonces();
+        annonces.value = data;
       } catch (err) {
-        error.value = "Erreur lors du chargement des annonces"
-        console.error(err)
+        error.value = "Erreur lors du chargement des annonces";
+        console.error(err);
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     const searchAnnonces = async () => {
       try {
-        loading.value = true
-        error.value = null
+        loading.value = true;
+        error.value = null;
         
-        // Nettoyage des filtres vides
         const filters = Object.entries(searchFilters.value).reduce((acc, [key, value]) => {
           if (value !== '' && value !== null) {
-            acc[key] = value
+            acc[key] = value;
           }
-          return acc
-        }, {})
+          return acc;
+        }, {});
 
-        const data = await annonceService.searchAnnonces(filters)
-        annonces.value = data
+        const data = await annonceService.searchAnnonces(filters);
+        annonces.value = data;
       } catch (err) {
-        error.value = "Erreur lors de la recherche"
-        console.error(err)
+        error.value = "Erreur lors de la recherche";
+        console.error(err);
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     const resetSearch = () => {
       searchFilters.value = {
         ville: '',
         type: '',
         prixMax: null
-      }
-      loadAnnonces()
-    }
+      };
+      loadAnnonces();
+    };
 
     const formatPrice = (price) => {
-      return new Intl.NumberFormat('fr-FR').format(price)
-    }
+      return new Intl.NumberFormat('fr-FR').format(price);
+    };
 
-    onMounted(loadAnnonces)
+    onMounted(loadAnnonces);
 
     return {
       annonces,
@@ -175,7 +179,7 @@ export default {
       searchAnnonces,
       resetSearch,
       formatPrice
-    }
+    };
   }
-}
+};
 </script>

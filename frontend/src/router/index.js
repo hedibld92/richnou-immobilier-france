@@ -2,26 +2,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
-import DashboardVendeur from '../views/DashboardVendeur.vue'
+import AnnonceDetail from '../views/AnnonceDetail.vue';
 import DashboardAcheteur from '../views/DashboardAcheteur.vue'
+import DashboardVendeur from '../views/DashboardVendeur.vue'
+import CreateAnnonce from '../views/CreateAnnonce.vue'  // Ajoutez cette ligne
 import Recherche from '../views/Recherche.vue'
-import Contact from '../views/Contact.vue'
-import AnnonceDetail from '../views/AnnonceDetail.vue'
-import PostAnnonce from '../views/PostAnnonce.vue';
+import Contact from '../views/Contact.vue';
 
 const routes = [
-    {
-    path: '/annonce/:id',
-    name: 'AnnonceDetail',
-    component: AnnonceDetail,
-    props: true
-    },
-    {
-    path: '/poster-annonce',
-    name: 'PostAnnonce',
-    component: PostAnnonce,
-    meta: { requiresAuth: true, vendeurOnly: true }
-      },
   {
     path: '/',
     name: 'Home',
@@ -38,16 +26,22 @@ const routes = [
     component: Register
   },
   {
-    path: '/dashboard-vendeur',
-    name: 'DashboardVendeur',
-    component: DashboardVendeur,
-    meta: { requiresAuth: true, role: 'vendeur' }
-  },
-  {
     path: '/dashboard-acheteur',
     name: 'DashboardAcheteur',
     component: DashboardAcheteur,
-    meta: { requiresAuth: true, role: 'acheteur' }
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/dashboard-vendeur',
+    name: 'DashboardVendeur',
+    component: DashboardVendeur,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/creer-annonce',
+    name: 'CreateAnnonce',
+    component: CreateAnnonce,
+    meta: { requiresAuth: true, vendeurOnly: true }
   },
   {
     path: '/recherche',
@@ -55,30 +49,45 @@ const routes = [
     component: Recherche
   },
   {
-    path: '/contact',
-    name: 'Contact',
-    component: Contact
+    path: '/annonce/:id',
+    name: 'AnnonceDetail',
+    component: () => import('../views/AnnonceDetail.vue')
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../views/NotFound.vue') // Créez cette vue
+  },
+  {
+    path: '/ajouter-annonce',  // Nouvelle route
+    name: 'PostAnnonce',       // Nom correspondant à votre composant
+    component: () => import('../views/PostAnnonce.vue')
+  },
+  {
+    path: '/modifier-annonce/:id',
+    name: 'ModifierAnnonce',
+    component: () => import('../views/ModifierAnnonce.vue')
   }
+  
 ]
 
-
 const router = createRouter({
-    history: createWebHistory(),
-    routes
-  });
-  
-  // Guard de navigation pour vérifier l'authentification et le rôle
-  router.beforeEach((to, from, next) => {
-    const isAuthenticated = localStorage.getItem('token');
-    const userRole = JSON.parse(localStorage.getItem('user'))?.role;
-  
-    if (to.meta.requiresAuth && !isAuthenticated) {
-      next('/login');
-    } else if (to.meta.vendeurOnly && userRole !== 'vendeur') {
-      next('/');
-    } else {
-      next();
-    }
-  });
-  
-  export default router;
+  history: createWebHistory(),
+  routes
+})
+
+// Navigation guard
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+  const userRole = localStorage.getItem('userRole')
+
+  if (to.meta.requiresAuth && !token) {
+    next('/login')
+  } else if (to.meta.vendeurOnly && userRole !== 'vendeur') {
+    next('/dashboard-acheteur')
+  } else {
+    next()
+  }
+})
+
+export default router

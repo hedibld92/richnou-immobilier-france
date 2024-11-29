@@ -1,37 +1,48 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/api';
+const api = axios.create({
+  baseURL: 'http://localhost:3000/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
 
-export const annonceService = {
-    async getAllAnnonces() {
-        try {
-            const response = await axios.get(`${API_URL}/annonces`);
-            return response.data;
-        } catch (error) {
-            console.error('Erreur lors de la récupération des annonces:', error);
-            throw error;
-        }
-    },
+// Intercepteur pour gérer les erreurs
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', error.response?.data || error.message);
+    throw error;
+  }
+);
 
-    async searchAnnonces(filters) {
-        try {
-            const response = await axios.get(`${API_URL}/annonces/search`, { 
-                params: filters 
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Erreur lors de la recherche:', error);
-            throw error;
-        }
-    },
+export const searchAnnonces = async (searchParams) => {
+  try {
+    const response = await api.get('/annonces/search', { params: searchParams });
+    return response.data;
+  } catch (error) {
+    console.error('Erreur lors de la recherche:', error);
+    throw error;
+  }
+};
 
-    async getAnnonceById(id) {
-        try {
-            const response = await axios.get(`${API_URL}/annonces/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error('Erreur lors de la récupération de l\'annonce:', error);
-            throw error;
+export const createAnnonce = async (annonceData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await api.post('/annonces', annonceData, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erreur lors de la création de l\'annonce:', error);
+      throw error;
     }
+  };
+
+// Autres fonctions d'API si nécessaire
+export const annonceService = {
+  searchAnnonces,
+  // ... autres méthodes
 };

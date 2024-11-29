@@ -15,3 +15,11 @@ exports.verifyToken = (req, res, next) => {
     return res.status(401).json({ message: "Token invalide" });
   }
 };
+
+exports.checkVendeur = (req, res, next) => {
+  if (req.user && req.user.role === 'vendeur') {
+    next();
+  } else {
+    res.status(403).json({ message: "Accès réservé aux vendeurs" });
+  }
+};

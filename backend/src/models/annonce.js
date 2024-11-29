@@ -1,7 +1,21 @@
 const mongoose = require('mongoose');
 
 const annonceSchema = new mongoose.Schema({
+    
   titre: {
+    type: String,
+    required: true
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ['chateau', 'manoir', 'villa', 'hotel-particulier', 'loft']
+  },
+  prix: {
+    type: Number,
+    required: true
+  },
+  ville: {
     type: String,
     required: true
   },
@@ -9,34 +23,16 @@ const annonceSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  prix: {
-    type: Number,
-    required: true
-  },
-  localisation: {
-    type: String,
-    required: true
-  },
-  surface: {
-    type: Number,
-    required: true
-  },
-  pieces: {
-    type: Number,
-    required: true
-  },
+  surface: { type: Number, required: true },
+  pieces: { type: Number, required: true }, 
   images: [{
     type: String
   }],
-  dateCreation: {
-    type: Date,
-    default: Date.now
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  }
+  caracteristiques: [{
+    type: String
+  }]
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Annonce', annonceSchema);

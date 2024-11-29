@@ -1,150 +1,129 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- En-tête -->
-    <header class="bg-white shadow">
-      <div class="container mx-auto px-4 py-6">
-        <div class="flex justify-between items-center">
-          <h1 class="text-3xl font-bold">Tableau de bord Vendeur</h1>
-          <button
-            @click="showNewAnnonceModal = true"
-            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Tableau de bord Vendeur</h1>
+
+    <!-- Bouton Créer une annonce -->
+    <div class="mb-8">
+      <router-link 
+        to="/creer-annonce"
+        class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        Créer une nouvelle annonce
+      </router-link>
+    </div>
+
+    <!-- Liste des annonces -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-for="annonce in annonces" :key="annonce._id" class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="relative h-48">
+          <img 
+            :src="annonce.images?.[0] || '/placeholder-image.jpg'" 
+            :alt="annonce.titre"
+            class="w-full h-full object-cover"
           >
-            Nouvelle annonce
-          </button>
+          <div class="absolute bottom-4 right-4 bg-black/75 text-white px-4 py-2 rounded">
+            {{ formatPrice(annonce.prix) }} €
+          </div>
         </div>
-      </div>
-    </header>
-
-    <!-- Contenu principal -->
-    <main class="container mx-auto px-4 py-8">
-      <!-- Statistiques -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-lg shadow">
-          <h3 class="text-lg font-semibold text-gray-600 mb-2">Annonces actives</h3>
-          <p class="text-3xl font-bold">{{ stats.activeListings }}</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow">
-          <h3 class="text-lg font-semibold text-gray-600 mb-2">Vues totales</h3>
-          <p class="text-3xl font-bold">{{ stats.totalViews }}</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg shadow">
-          <h3 class="text-lg font-semibold text-gray-600 mb-2">Contacts reçus</h3>
-          <p class="text-3xl font-bold">{{ stats.totalContacts }}</p>
-        </div>
-      </div>
-
-      <!-- Liste des annonces -->
-      <div class="bg-white rounded-lg shadow">
+        
         <div class="p-6">
-          <h2 class="text-xl font-bold mb-4">Mes annonces</h2>
+          <h3 class="text-xl font-semibold mb-2">{{ annonce.titre }}</h3>
+          <p class="text-gray-600 mb-4">{{ annonce.ville }}</p>
           
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr class="text-left border-b">
-                  <th class="pb-4">Titre</th>
-                  <th class="pb-4">Prix</th>
-                  <th class="pb-4">Statut</th>
-                  <th class="pb-4">Vues</th>
-                  <th class="pb-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="annonce in annonces" :key="annonce._id" class="border-b">
-                  <td class="py-4">{{ annonce.titre }}</td>
-                  <td>{{ formatPrice(annonce.prix) }} €</td>
-                  <td>
-                    <span 
-                      :class="{
-                        'px-3 py-1 rounded-full text-sm': true,
-                        'bg-green-100 text-green-800': annonce.statut === 'disponible',
-                        'bg-yellow-100 text-yellow-800': annonce.statut === 'option',
-                        'bg-gray-100 text-gray-800': annonce.statut === 'vendu'
-                      }"
-                    >
-                      {{ annonce.statut }}
-                    </span>
-                  </td>
-                  <td>{{ annonce.vues || 0 }}</td>
-                  <td class="space-x-2">
-                    <button
-                      @click="editAnnonce(annonce)"
-                      class="text-blue-600 hover:text-blue-800"
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      @click="toggleAnnonceStatus(annonce)"
-                      class="text-red-600 hover:text-red-800"
-                    >
-                      {{ annonce.statut === 'disponible' ? 'Désactiver' : 'Activer' }}
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-500">
+              {{ annonce.surface }}m² - {{ annonce.pieces }} pièces
+            </span>
+            
+            <div class="flex space-x-2">
+              <button 
+                @click="editAnnonce(annonce)"
+                class="p-2 text-blue-600 hover:bg-blue-50 rounded"
+              >
+                Modifier
+              </button>
+              <button 
+                @click="deleteAnnonce(annonce._id)"
+                class="p-2 text-red-600 hover:bg-red-50 rounded"
+              >
+                Supprimer
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </main>
+    </div>
 
-    <!-- Modal nouvelle annonce -->
-    <AnnonceModal
-      v-if="showNewAnnonceModal"
-      :annonce="selectedAnnonce"
-      @close="closeModal"
-      @save="saveAnnonce"
-    />
+    <!-- Message si aucune annonce -->
+    <div v-if="annonces.length === 0" class="text-center py-12">
+      <p class="text-gray-600">Vous n'avez pas encore publié d'annonces</p>
+    </div>
+
+    <!-- Loading state -->
+    <div v-if="loading" class="text-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { useRouter } from 'vue-router';
 
 export default {
+  name: 'DashboardVendeur',
+  
   setup() {
-    const savedSearches = ref([]);
-    const favoris = ref([]);
+    const router = useRouter();
+    const annonces = ref([]);
+    const loading = ref(false);
     const error = ref('');
 
-    const loadSavedSearches = async () => {
+    const loadAnnonces = async () => {
       try {
-        const response = await axios.get('/api/searches', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        savedSearches.value = response.data;
+        loading.value = true;
+        // Implémentez l'appel API pour charger les annonces du vendeur
+        // annonces.value = await getVendeurAnnonces();
       } catch (err) {
-        console.error('Erreur lors du chargement des recherches:', err);
-        error.value = 'Impossible de charger les recherches sauvegardées';
+        console.error('Erreur lors du chargement des annonces:', err);
+        error.value = "Erreur lors du chargement des annonces";
+      } finally {
+        loading.value = false;
       }
     };
 
-    const loadFavoris = async () => {
-      try {
-        const response = await axios.get('/api/favoris', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        favoris.value = response.data;
-      } catch (err) {
-        console.error('Erreur lors du chargement des favoris:', err);
-        error.value = 'Impossible de charger les favoris';
+    const formatPrice = (price) => {
+      return new Intl.NumberFormat('fr-FR').format(price);
+    };
+
+    const editAnnonce = (annonce) => {
+      router.push(`/modifier-annonce/${annonce._id}`);
+    };
+
+    const deleteAnnonce = async (annonceId) => {
+      if (confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
+        try {
+          // Implémentez l'appel API pour supprimer l'annonce
+          // await deleteAnnonceApi(annonceId);
+          annonces.value = annonces.value.filter(a => a._id !== annonceId);
+        } catch (err) {
+          console.error('Erreur lors de la suppression:', err);
+          error.value = "Erreur lors de la suppression de l'annonce";
+        }
       }
     };
 
     onMounted(() => {
-      loadSavedSearches();
-      loadFavoris();
+      loadAnnonces();
     });
 
     return {
-      savedSearches,
-      favoris,
-      error
+      annonces,
+      loading,
+      error,
+      formatPrice,
+      editAnnonce,
+      deleteAnnonce
     };
   }
 };

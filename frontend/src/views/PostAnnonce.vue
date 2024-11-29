@@ -2,14 +2,14 @@
   <div class="container mx-auto px-4 py-8">
     <h2 class="text-2xl font-bold mb-6">Poster une annonce</h2>
     
-    <form @submit.prevent="handleSubmit" class="max-w-2xl mx-auto">
+    <form @submit.prevent="submitForm" class="max-w-2xl mx-auto">
       <!-- Titre -->
       <div class="mb-4">
         <label for="titre" class="block text-gray-700 font-bold mb-2">Titre de l'annonce</label>
         <input
           type="text"
           id="titre"
-          v-model="form.titre"
+          v-model="formData.titre"
           class="w-full px-3 py-2 border rounded-lg"
           required
         >
@@ -20,11 +20,29 @@
         <label for="description" class="block text-gray-700 font-bold mb-2">Description</label>
         <textarea
           id="description"
-          v-model="form.description"
+          v-model="formData.description"
           class="w-full px-3 py-2 border rounded-lg"
           rows="4"
           required
         ></textarea>
+      </div>
+
+      <!-- Type de bien -->
+      <div class="mb-4">
+        <label for="type" class="block text-gray-700 font-bold mb-2">Type de bien</label>
+        <select
+          id="type"
+          v-model="formData.type"
+          class="w-full px-3 py-2 border rounded-lg"
+          required
+        >
+          <option value="">Sélectionnez un type</option>
+          <option value="chateau">Château</option>
+          <option value="manoir">Manoir</option>
+          <option value="villa">Villa</option>
+          <option value="hotel-particulier">Hôtel Particulier</option>
+          <option value="loft">Loft</option>
+        </select>
       </div>
 
       <!-- Prix -->
@@ -33,19 +51,19 @@
         <input
           type="number"
           id="prix"
-          v-model="form.prix"
+          v-model="formData.prix"
           class="w-full px-3 py-2 border rounded-lg"
           required
         >
       </div>
 
-      <!-- Localisation -->
+      <!-- Ville -->
       <div class="mb-4">
-        <label for="localisation" class="block text-gray-700 font-bold mb-2">Localisation</label>
+        <label for="ville" class="block text-gray-700 font-bold mb-2">Ville</label>
         <input
           type="text"
-          id="localisation"
-          v-model="form.localisation"
+          id="ville"
+          v-model="formData.ville"
           class="w-full px-3 py-2 border rounded-lg"
           required
         >
@@ -57,7 +75,7 @@
         <input
           type="number"
           id="surface"
-          v-model="form.surface"
+          v-model="formData.surface"
           class="w-full px-3 py-2 border rounded-lg"
           required
         >
@@ -69,7 +87,7 @@
         <input
           type="number"
           id="pieces"
-          v-model="form.pieces"
+          v-model="formData.pieces"
           class="w-full px-3 py-2 border rounded-lg"
           required
         >
@@ -93,14 +111,23 @@
         {{ error }}
       </div>
 
-      <!-- Bouton de soumission -->
-      <button
-        type="submit"
-        class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
-        :disabled="loading"
-      >
-        {{ loading ? 'Publication en cours...' : 'Publier l\'annonce' }}
-      </button>
+      <!-- Boutons -->
+      <div class="flex space-x-4">
+        <button
+          type="button"
+          @click="$router.push('/recherche')"
+          class="w-1/2 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600"
+        >
+          Annuler
+        </button>
+        <button
+          type="submit"
+          class="w-1/2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
+          :disabled="loading"
+        >
+          {{ loading ? 'Publication en cours...' : 'Publier l\'annonce' }}
+        </button>
+      </div>
     </form>
   </div>
 </template>
@@ -108,61 +135,64 @@
 <script>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
+import annonceService from '../services/annonceService';
 
 export default {
   name: 'PostAnnonce',
   setup() {
-    const store = useStore();
     const router = useRouter();
     const loading = ref(false);
     const error = ref('');
-    const form = ref({
+    const formData = ref({
       titre: '',
       description: '',
       prix: '',
-      localisation: '',
+      ville: '',
+      type: '',
       surface: '',
       pieces: '',
       images: []
     });
 
     const handleImageUpload = (event) => {
-      const files = event.target.files;
-      form.value.images = Array.from(files);
+      formData.value.images = Array.from(event.target.files);
     };
 
-    const handleSubmit = async () => {
-      loading.value = true;
-      error.value = '';
-
+    const submitForm = async () => {
       try {
-        const formData = new FormData();
-        Object.keys(form.value).forEach(key => {
-          if (key === 'images') {
-            form.value.images.forEach(image => {
-              formData.append('images', image);
-            });
-          } else {
-            formData.append(key, form.value[key]);
+        loading.value = true;
+        error.value = '';
+        
+        const formDataToSend = new FormData();
+        
+        // Ajout des champs texte
+        Object.keys(formData.value).forEach(key => {
+          if (key !== 'images') {
+            formDataToSend.append(key, formData.value[key]);
           }
         });
+        
+        // Ajout des images
+        formData.value.images.forEach(image => {
+          formDataToSend.append('images', image);
+        });
 
-        await store.dispatch('postAnnonce', formData);
-        router.push('/mes-annonces'); // Redirige vers la liste des annonces du vendeur
+        await annonceService.createAnnonce(formDataToSend);
+        router.push('/recherche');
       } catch (err) {
         error.value = err.response?.data?.message || 'Erreur lors de la publication de l\'annonce';
+        console.error('Erreur:', err);
       } finally {
         loading.value = false;
       }
     };
 
     return {
-      form,
+      formData,
       loading,
       error,
-      handleSubmit,
-      handleImageUpload
+      handleImageUpload,
+      submitForm
     };
   }
 };
